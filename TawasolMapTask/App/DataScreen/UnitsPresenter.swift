@@ -14,9 +14,10 @@ protocol UnitsPresenterProtocol:AnyObject{
     
     func fetchUnits(sidModel:SidModel)
     
-    func fetchAddress(lon: String, lat: String, uid: String)
     
-    func fetchSensorsValues(sid:String,uid:String)
+    func fetchAddress(uid: String, sid:String, unit:[Item])
+    
+    func fetchSensorsValues(sid:String,unit:[Item],address:AddressModel)
     
     
 }
@@ -57,17 +58,8 @@ class UnitsPresenter:UnitsPresenterProtocol{
             switch (response.status!){
             case .success:
                 if let unitModel = response.data?.items{
-                    for item in unitModel{
-                        let lon = String(item.pos.x)
-                        let lat = String(item.pos.y)
-                        let itemID = String(item.id)
-                        
-                        self.fetchAddress(lon: lon, lat: lat, uid: uid)
-                        
-                        
-                        self.fetchSensorsValues(sid: sidModel.eid, uid: itemID)
-                        self.view?.updateUnits(units: unitModel)
-                }
+
+                    self.fetchAddress(uid: uid,sid: sidModel.eid,unit: unitModel)
                 }
                 
                 
@@ -79,34 +71,49 @@ class UnitsPresenter:UnitsPresenterProtocol{
     }
     
     
-    func fetchAddress(lon: String, lat: String, uid: String) {
+    func fetchAddress(uid: String, sid:String,unit:[Item]) {
         
-        
+        var addresses:[String] = []
+        for count in 0...unit.count-1{
+            let lon = String(unit[count].pos.x)
+            let lat = String(unit[count].pos.y)
         datasource.fetchAddress(lon: lon, lat: lat, uid: uid) { (response) in
             switch (response.status!){
             case .success:
                 if let address = response.data,!address.isEmpty{
-
-                    self.view?.updateAddress(address: address)
+                    addresses.append(address[0])
+                    
+                    if count == (unit.count-1){
+                        self.fetchSensorsValues(sid: sid, unit: unit,address: addresses )
+                    }
                 }
             case .failure:
                 print(response.message ?? "Error")
             }
         }
     }
-    
-    func fetchSensorsValues(sid:String,uid:String) {
+    }
+    func fetchSensorsValues(sid:String,unit:[Item],address:AddressModel) {
+        
+        var sensorsArray:[[String: Double]] = []
+        
+        for count in 0...unit.count-1{
+            let uid = String(unit[count].id)
         datasource.fetchSensorsValues(sid: sid, uid: uid) { (response) in
             switch (response.status!){
             case.success:
                 if let sensors = response.data,!sensors.isEmpty{
+                    sensorsArray.append(sensors)
                     
-                    self.view?.updateSensorsState(sensors: sensors)
+                    if count == (unit.count-1){
+                    self.view?.updateTable(units: unit, address: address, sensors: sensorsArray)
+                    }
                 }
                 
             case.failure:
                 print(response.message ?? "Error")
             }
+        }
         }
     }
 }

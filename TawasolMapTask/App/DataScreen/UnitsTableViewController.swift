@@ -8,9 +8,8 @@
 import UIKit
 
 protocol UnitsTableViewProtocol:AnyObject{
-    func updateAddress(address:[String])
-    func updateUnits(units:[Item])
-    func updateSensorsState(sensors:SensorsValuesModel)
+    
+    func updateTable(units:[Item],address:[String],sensors:[SensorsValuesModel])
 }
 
 class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
@@ -18,26 +17,26 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
     var token = ""
     private var timer : DispatchSourceTimer!
     private var myUnits:[Item]?
-    private var myAddress:[String] = []
-    private var mySensors:[SensorsValuesModel] = []
+    private var myAddress:[String]?
+    private var mySensors:[[String:Double]]?
     private var presenter:UnitsPresenter?
     
-    func updateUnits(units: [Item]) {
-        myUnits?.removeAll()
+    
+    func updateTable(units:[Item],address:[String],sensors:[SensorsValuesModel]){
+        removeAll()
         myUnits = units
+        myAddress = address
+        mySensors = sensors
         self.tableView.reloadData()
+        print("table reload")
     }
     
-    
-    func updateAddress(address: [String]) {
-        myAddress.append(contentsOf: address) 
-        self.tableView.reloadData()
+    private func removeAll(){
+        myUnits?.removeAll()
+        myAddress?.removeAll()
+        mySensors?.removeAll()
     }
     
-    func updateSensorsState(sensors: SensorsValuesModel) {
-        mySensors.append(sensors)
-        self.tableView.reloadData()
-    }
     
 
     var units:[MyUnit]?
@@ -69,7 +68,7 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
         if let myUnits = myUnits,!myUnits.isEmpty{
             let myUnit = myUnits[indexPath.row]
             cell.uName.text = myUnit.nm
-            cell.uSpeed.text = String(myUnit.pos.s)
+            cell.uSpeed.text = "Speed: \(String(myUnit.pos.s))"
             
             for (key,value) in myUnit.sens{
                 switch(key){
@@ -85,35 +84,35 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
         }
         }
         
-        if !myAddress.isEmpty {
-            if myAddress.count-1 >= indexPath.row{
-            cell.uAddress.text = myAddress[indexPath.row]
-            }
+        if let myAddress = myAddress,!myAddress.isEmpty,myAddress.count-1 >= indexPath.row{
+            let address = myAddress[indexPath.row]
+            cell.uAddress.text = address
         }
         
-        if !mySensors.isEmpty{
-            if mySensors.count-1 >= indexPath.row{
-            let mySen = mySensors[indexPath.row]
-            for (key,value) in mySen{
-                var type = ""
-                if value > 0{
-                    type = "ON"
-                }else{
-                    type = "OFF"
-                }
-                switch(key){
-                case "1":
-                    cell.engineType.text = type
-                case "2":
-                    cell.uSensors1Type.text = type
-                case "3":
-                    cell.sensor2Type.text = type
-                default:
-                    print("")
-            }
-            }
+        
+        if let mySensors = mySensors, !mySensors.isEmpty,mySensors.count-1 >= indexPath.row {
+            let mySensor = Array(mySensors)[indexPath.row]
+            
+            for (key,value) in mySensor{
+                            var type = ""
+                            if value > 0{
+                                type = "ON"
+                            }else{
+                                type = "OFF"
+                            }
+                            switch(key){
+                            case "1":
+                                cell.engineType.text = type
+                            case "2":
+                                cell.uSensors1Type.text = type
+                            case "3":
+                                cell.sensor2Type.text = type
+                            default:
+                                print("")
+                        }
+                        }
         }
-        }
+
         return cell
     
     
@@ -136,11 +135,9 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
     }
             
        func callAPI(){
-           myAddress.removeAll()
-           mySensors.removeAll()
                 print("execute")
                 presenter?.fetchData(token: token)
-                print(token)
+//                print(token)
             }
     /*
     // Override to support conditional editing of the table view.
