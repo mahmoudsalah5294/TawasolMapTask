@@ -42,7 +42,7 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
     var units:[MyUnit]?
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.rowHeight = 200
+        tableView.rowHeight = 500
         let datasource = APIDataSource()
         presenter = UnitsPresenter(datasource: datasource, view: self)
         startTimer()
@@ -69,6 +69,7 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
             let myUnit = myUnits[indexPath.row]
             cell.uName.text = myUnit.nm
             cell.uSpeed.text = "Speed: \(String(myUnit.pos.s))"
+            
             
             for (key,value) in myUnit.sens{
                 switch(key){
@@ -104,9 +105,9 @@ class UnitsTableViewController: UITableViewController,UnitsTableViewProtocol {
                             case "1":
                                 cell.engineType.text = type
                             case "2":
-                                cell.uSensors1Type.text = type
+                                cell.uSensors1Type.text = String(value)
                             case "3":
-                                cell.sensor2Type.text = type
+                                cell.sensor2Type.text = String(value)
                             default:
                                 print("")
                         }
